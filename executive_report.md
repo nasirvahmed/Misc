@@ -1,6 +1,6 @@
 # 🛡️ GuardDuty Independent Threat Intelligence Validation
 
-> **Report Date:** 2026-07-10 15:55  
+> **Report Date:** 2026-07-10 17:46  
 > **Methodology:** Cross-reference GuardDuty IOCs against GreyNoise, AbuseIPDB, and URLhaus
 
 ---
@@ -8,24 +8,58 @@
 ## 1. Executive Summary
 
 GuardDuty generated **295,626 findings** referencing:
-- **50** unique public IP addresses
-- **40,908** unique domains (sample of 50 validated)
+- **5** unique public IP addresses
+- **40,908** unique domains (sample of 0 validated)
 
 ### IP Validation Results
 
 | Category | Count | Percentage |
 |----------|------:|-----------:|
 | ✅ Confirmed Malicious | 0 | 0.0% |
-| ⚠️ Likely Noise/Benign | 45 | 90.0% |
-| ❓ Unverifiable | 5 | 10.0% |
+| ⚠️ Likely Noise/Benign | 5 | 100.0% |
+| ❓ Unverifiable | 0 | 0.0% |
 
-### Domain Validation Results
+---
 
-| Category | Count |
-|----------|------:|
-| 🔴 In URLhaus (known malware) | 0 |
-| ⚪ Not in URLhaus | 50 |
-| 🟠 Active malware hosting | 0 |
+## 🏢 Known Infrastructure: Excluded from Threat Analysis
+
+**Total IPs excluded:** 72 / 724 (9.9% of all public IPs)
+
+### Ericsson Infrastructure (Intentional Monitoring)
+
+> **Context:** Ericsson IPs were **intentionally added** to the GuardDuty custom threat list for **visibility/tracking purposes**, not because they represent a real threat. This is a deliberate use of GuardDuty's custom threat list as a network activity monitor for partner traffic.
+
+| Detail | Value |
+|---|---|
+| Ericsson IPs on custom list | 67 |
+| Findings generated | ~5,400+ |
+| Purpose | Traffic visibility / partner monitoring |
+| Threat level | None — known partner infrastructure |
+
+**⚠️ Implication for this analysis:** These findings are **not threats** and inflate GuardDuty's alert count. They have been excluded from external validation to avoid skewing results. However, this practice contributes to alert fatigue — SOC analysts cannot distinguish intentional tracking alerts from genuine threats without additional context.
+
+**Recommendation:** Consider tagging these findings with a custom label or using GuardDuty **suppression rules with auto-archiving** to separate Ericsson tracking alerts from genuine threats — keeps the visibility without polluting SOC queues.
+
+### Vonage Infrastructure (Known Service Provider)
+
+> Vonage/Vonage Business (UCaaS provider) IPs flagged by GuardDuty as `NetworkPortUnusual` or `UnusualDNSResolver` — expected behavior from VoIP infrastructure.
+
+| IP | Service | Finding Type |
+|---|---|---|
+| `104.192.48.6` | Vonage UCaaS | Behavior:EC2/NetworkPortUnusual |
+| `216.147.7.132` | Vonage UCaaS | Behavior:EC2/NetworkPortUnusual |
+| `216.9.65.2` | Vonage UCaaS | Behavior:EC2/NetworkPortUnusual |
+| `72.5.150.10` | Vonage UCaaS | Behavior:EC2/NetworkPortUnusual |
+| `72.5.150.11` | Vonage UCaaS | Behavior:EC2/NetworkPortUnusual |
+
+**Action:** Suppress GuardDuty findings for known Vonage CIDR ranges.
+
+### Exclusion Summary
+
+| Source | IPs | Reason for Exclusion | Recommendation |
+|---|---:|---|---|
+| Ericsson | 67 | Intentional tracking (not a threat) | Suppression rules + auto-archive |
+| Vonage | 5 | Known UCaaS provider | Add to GuardDuty suppression rules |
 
 ---
 
@@ -33,36 +67,19 @@ GuardDuty generated **295,626 findings** referencing:
 
 > These IPs were flagged by GuardDuty but external sources indicate they are **benign, whitelisted, or have zero abuse history**.
 
-### B. Zero External Reports (45 IPs)
+### B. Zero External Reports (5 IPs)
 
 No abuse reports in 90 days — likely stale or low-confidence alerts.
 
 | IP | ISP | Country |
 |---|---|---|
-| `102.89.32.126` | MTN Nigeria | NG |
-| `102.89.22.141` | MTNN-OJOTA-REGION-PREFIXES | NG |
-| `103.120.6.144` | HostRoyale Technologies Pvt Ltd | AU |
-| `103.162.75.75` | Team Technic | IN |
-| `103.174.111.201` | 3 Way Cable Communications Private Limit | IN |
-| `103.110.164.24` | Esto Broadband Pvt Ltd | IN |
 | `100.31.30.153` | Amazon Data Services Northern Virginia | US |
-| `103.210.134.122` | Assistive Networks and Technologies Pvt  | IN |
-| `103.116.136.41` | SKYNET SERVICES | IN |
-| `103.184.239.38` | Kerala Vision Broad Band Private Limited | IN |
-| `103.168.81.139` | SMARTFI NETWORKS LLP | IN |
 | `100.48.57.28` | Amazon Data Services Northern Virginia | US |
+| `1.0.0.1` | APNIC and Cloudflare DNS Resolver projec | AU |
+| `100.24.102.134` | Amazon Data Services Northern Virginia | US |
 | `100.20.125.19` | Amazon.com, Inc. | US |
-| `103.106.232.9` | Hbs Network Private Limited | IN |
-| `103.16.71.230` | Gatik Business Solutions | IN |
-| `103.110.164.17` | Esto Broadband Pvt Ltd | IN |
-| `103.177.83.247` | Sancfil Technologies Internet Services P | IN |
-| `100.8.67.93` | Verizon Business | US |
-| `103.137.51.168` | Pteron Communication Pvt. Ltd. | IN |
-| `103.110.165.121` | Esto Broadband Pvt Ltd | IN |
 
-*...and 25 more*
-
-**📊 Impact:** 90.0% of GuardDuty IP indicators are likely noise, generating alert fatigue without actionable intelligence.
+**📊 Impact:** 100.0% of GuardDuty IP indicators are likely noise, generating alert fatigue without actionable intelligence.
 
 ---
 
@@ -126,9 +143,18 @@ GuardDuty findings may reference **stale indicators**. External services provide
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Custom Threat List: Intentional Tracking vs Security Alerts
+
+| Source | Purpose | Findings Generated | Impact on SOC |
+|---|---|---:|---|
+| Ericsson (67 IPs) | Partner traffic monitoring | ~5,400 | Alerts indistinguishable from real threats |
+| Vonage (5 IPs) | UCaaS provider (not intentional) | ~80 | Behavioral false positives |
+
+**Issue:** Using the threat intelligence list for operational monitoring mixes security signals with tracking data, making it impossible for analysts to prioritize without manual investigation.
+
 ### Alert Fatigue
 
-- **90.0%** of IP indicators are unconfirmed/benign
+- **100.0%** of IP indicators are unconfirmed/benign
 - **295,626** total findings with limited prioritization guidance
 - SOC teams cannot distinguish critical from informational
 
@@ -142,11 +168,20 @@ GuardDuty findings may reference **stale indicators**. External services provide
 
 ## 6. Recommendations
 
+### 🟠 P1. Reduce Monitoring Noise from Intentional Tracking
+
+- **Ericsson (67 IPs):** Currently using custom threat list for partner traffic visibility. This inflates alert counts by ~5,400 findings. Use **GuardDuty suppression rules with auto-archive** to keep visibility without flooding SOC — findings still exist for audit but don't trigger analyst workflows.
+- **Vonage (5 IPs):** UCaaS provider traffic triggering behavioral findings. Add to **GuardDuty trusted IP list** or suppression rules.
+
+This reduces noise by **~5,400+ findings** without losing visibility (move to appropriate monitoring tool instead).
+
 ### 1. Integrate External Threat Intel Feeds
 
 - Add AbuseIPDB/GreyNoise enrichment to SIEM correlation rules
 - Auto-suppress GuardDuty alerts for known benign IPs (RIOT list)
 - Use URLhaus for malware family attribution on DNS findings
+- Add VirusTotal for multi-vendor consensus scoring
+- Use AlienVault OTX for campaign/threat actor attribution
 
 ### 2. Reduce Noise
 
